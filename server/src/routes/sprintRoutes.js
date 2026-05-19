@@ -13,5 +13,6 @@ router.delete('/:projectId/sprints/:sprintId/tasks/:taskId', auth, sprintCtrl.re
 router.post('/:projectId/sprints/:sprintId/stories', auth, sprintCtrl.addStoryToSprint);
 router.delete('/:projectId/sprints/:sprintId/stories/:storyId', auth, sprintCtrl.removeStoryFromSprint);
 router.post('/:projectId/sprints/:sprintId/burndown', auth, sprintCtrl.recordBurndown);
+router.get('/:projectId/sprints/:sprintId/burndown', auth, sprintCtrl.getBurndownData);
 
 module.exports = router;

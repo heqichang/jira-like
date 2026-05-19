@@ -8,6 +8,7 @@ router.get('/:projectId/epics/:epicId', auth, epicCtrl.getEpic);
 router.put('/:projectId/epics/:epicId', auth, epicCtrl.updateEpic);
 router.delete('/:projectId/epics/:epicId', auth, epicCtrl.deleteEpic);
 router.post('/:projectId/epics/:epicId/stories', auth, epicCtrl.createStory);
+router.post('/:projectId/stories', auth, epicCtrl.createStoryWithoutEpic);
 router.get('/:projectId/stories', auth, epicCtrl.getProjectStories);
 router.get('/:projectId/stories/:storyId', auth, epicCtrl.getStory);
 router.put('/:projectId/stories/:storyId', auth, epicCtrl.updateStory);

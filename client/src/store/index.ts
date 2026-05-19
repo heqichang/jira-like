@@ -219,6 +219,8 @@ interface AppStore {
   unreadNotificationCount: number;
   ganttData: GanttData | null;
   velocityStats: VelocityStats | null;
+  burndownData: SprintBurndown[];
+  timeReport: any | null;
   loading: boolean;
   error: string | null;
 
@@ -260,6 +262,7 @@ interface AppStore {
   addStoryToSprint: (projectId: string, sprintId: string, storyId: string) => Promise<void>;
   removeStoryFromSprint: (projectId: string, sprintId: string, storyId: string) => Promise<void>;
   recordBurndown: (projectId: string, sprintId: string) => Promise<void>;
+  fetchBurndownData: (projectId: string, sprintId: string) => Promise<void>;
   fetchVelocity: (projectId: string) => Promise<void>;
 
   fetchEpics: (projectId: string) => Promise<void>;
@@ -270,7 +273,7 @@ interface AppStore {
 
   fetchStories: (projectId: string, params?: Record<string, string>) => Promise<void>;
   fetchStory: (projectId: string, storyId: string) => Promise<void>;
-  createStory: (projectId: string, epicId: string, data: Record<string, unknown>) => Promise<void>;
+  createStory: (projectId: string, data: Record<string, unknown>) => Promise<void>;
   updateStory: (projectId: string, storyId: string, data: Record<string, unknown>) => Promise<void>;
   deleteStory: (projectId: string, storyId: string) => Promise<void>;
   batchUpdateStoryOrder: (projectId: string, stories: { id: string; order: number }[]) => Promise<void>;
@@ -279,8 +282,10 @@ interface AppStore {
   createTimeLog: (projectId: string, taskId: string, data: { hours: number; description?: string; logDate: string; isEstimate?: boolean }) => Promise<void>;
   updateTimeLog: (projectId: string, taskId: string, timeLogId: string, data: Record<string, unknown>) => Promise<void>;
   deleteTimeLog: (projectId: string, taskId: string, timeLogId: string) => Promise<void>;
+  fetchTimeLogs: (projectId: string, params?: { startDate?: string; endDate?: string; userId?: string }) => Promise<void>;
   fetchProjectTimeLogs: (projectId: string, params?: { startDate?: string; endDate?: string; userId?: string }) => Promise<void>;
   fetchMyTimeLogs: (params?: { startDate?: string; endDate?: string; projectId?: string }) => Promise<void>;
+  fetchTimeReport: (projectId: string, period: 'week' | 'month') => Promise<void>;
 
   fetchTags: (projectId: string) => Promise<void>;
   createTag: (projectId: string, data: { name: string; color?: string }) => Promise<void>;
@@ -296,6 +301,8 @@ interface AppStore {
   markAllNotificationsRead: () => Promise<void>;
   deleteNotification: (notificationId: string) => Promise<void>;
   addNotification: (notification: Notification) => void;
+  fetchUserSettings: () => Promise<void>;
+  updateNotificationSettings: (data: { emailNotificationsEnabled?: boolean; pushNotificationsEnabled?: boolean }) => Promise<void>;
 
   fetchGanttData: (projectId: string) => Promise<void>;
   createDependency: (projectId: string, taskId: string, data: { dependsOnTaskId: string; type?: string }) => Promise<void>;
@@ -328,6 +335,8 @@ export const useAppStore = create<AppStore>((set) => ({
   unreadNotificationCount: 0,
   ganttData: null,
   velocityStats: null,
+  burndownData: [],
+  timeReport: null,
   loading: false,
   error: null,
 
@@ -630,6 +639,15 @@ export const useAppStore = create<AppStore>((set) => ({
     await sprintApi.recordBurndown(projectId, sprintId);
   },
 
+  fetchBurndownData: async (projectId, sprintId) => {
+    try {
+      const res = await sprintApi.getBurndown(projectId, sprintId);
+      set({ burndownData: res.data });
+    } catch {
+      // Ignore
+    }
+  },
+
   fetchVelocity: async (projectId) => {
     try {
       const res = await sprintApi.getVelocity(projectId);
@@ -700,8 +718,8 @@ export const useAppStore = create<AppStore>((set) => ({
     }
   },
 
-  createStory: async (projectId, epicId, data) => {
-    const res = await epicApi.createStory(projectId, epicId, data as Parameters<typeof epicApi.createStory>[2]);
+  createStory: async (projectId, data) => {
+    const res = await epicApi.createStory(projectId, data as Parameters<typeof epicApi.createStory>[1]);
     set((state) => ({ stories: [...state.stories, res.data] }));
   },
 
@@ -755,10 +773,28 @@ export const useAppStore = create<AppStore>((set) => ({
     }));
   },
 
+  fetchTimeLogs: async (projectId, params) => {
+    try {
+      const res = await timeLogApi.getProjectTimeLogs(projectId, params);
+      set({ timeLogs: res.data.timeLogs });
+    } catch {
+      // Ignore
+    }
+  },
+
   fetchProjectTimeLogs: async (projectId, params) => {
     try {
       const res = await timeLogApi.getProjectTimeLogs(projectId, params);
       set({ timeLogs: res.data.timeLogs });
+    } catch {
+      // Ignore
+    }
+  },
+
+  fetchTimeReport: async (projectId, period) => {
+    try {
+      const res = await timeLogApi.getReports(projectId, period);
+      set({ timeReport: res.data });
     } catch {
       // Ignore
     }
@@ -877,6 +913,20 @@ export const useAppStore = create<AppStore>((set) => ({
       notifications: [notification, ...state.notifications],
       unreadNotificationCount: state.unreadNotificationCount + 1,
     }));
+  },
+
+  fetchUserSettings: async () => {
+    try {
+      const res = await notificationApi.getNotificationSettings();
+      set({ userSettings: res.data });
+    } catch {
+      // Ignore
+    }
+  },
+
+  updateNotificationSettings: async (data) => {
+    const res = await notificationApi.updateNotificationSettings(data);
+    set({ userSettings: res.data });
   },
 
   fetchGanttData: async (projectId) => {

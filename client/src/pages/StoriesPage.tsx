@@ -26,10 +26,14 @@ function CreateStoryModal({ isOpen, onClose, onCreate, epics }: CreateStoryModal
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreate({
+    const submitData: any = {
       ...form,
       storyPoints: form.storyPoints ? parseInt(form.storyPoints) : null,
-    });
+    };
+    if (!submitData.epicId) {
+      delete submitData.epicId;
+    }
+    onCreate(submitData);
     setForm({
       title: '',
       description: '',

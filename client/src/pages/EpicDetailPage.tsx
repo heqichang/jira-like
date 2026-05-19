@@ -21,13 +21,17 @@ export default function EpicDetailPage() {
   const epicStories = stories.filter((s) => s.epicId === epicId);
   const epicTasks = tasks.filter((t) => t.epicId === epicId);
 
-  if (!epic) return null;
-
-  const totalStoryPoints = epicStories.reduce((sum, s) => sum + (s.storyPoints || 0), 0) +
-    epicTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
+  const totalStoryPoints = epic ? epicStories.reduce((sum, s) => sum + (s.storyPoints || 0), 0) +
+    epicTasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0) : 0;
 
   return (
-    <ProjectLayout title={`Epic: ${epic.name}`}>
+    <ProjectLayout title={epic ? `Epic: ${epic.name}` : 'Epic 详情'}>
+      {!epic ? (
+        <div className="p-6 text-center">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      ) : (
       <div className="p-6">
         <button
           onClick={() => navigate(`/projects/${projectId}/epics`)}
@@ -110,7 +114,8 @@ export default function EpicDetailPage() {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </ProjectLayout>
   );
 }

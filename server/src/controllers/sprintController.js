@@ -321,6 +321,26 @@ exports.recordBurndown = [
   },
 ];
 
+exports.getBurndownData = [
+  param('projectId').isUUID().withMessage('无效的项目ID'),
+  param('sprintId').isUUID().withMessage('无效的Sprint ID'),
+  validate,
+  async (req, res, next) => {
+    try {
+      await checkProjectMember(req.params.projectId, req.user.id);
+      
+      const burndown = await SprintBurndown.findAll({
+        where: { sprintId: req.params.sprintId },
+        order: [['date', 'ASC']],
+      });
+      
+      res.json(burndown);
+    } catch (err) {
+      next(err);
+    }
+  },
+];
+
 exports.getVelocityStats = [
   param('projectId').isUUID().withMessage('无效的项目ID'),
   validate,

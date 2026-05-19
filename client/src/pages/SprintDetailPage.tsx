@@ -158,10 +158,14 @@ export default function SprintDetailPage() {
     await removeTaskFromSprint(projectId, sprintId, taskId);
   };
 
-  if (!sprint) return null;
-
   return (
-    <ProjectLayout title={`Sprint: ${sprint.name}`}>
+    <ProjectLayout title={sprint ? `Sprint: ${sprint.name}` : 'Sprint 详情'}>
+      {!sprint ? (
+        <div className="p-6 text-center">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      ) : (
       <div className="p-6">
         <div className="mb-6">
           <button
@@ -356,7 +360,8 @@ export default function SprintDetailPage() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </ProjectLayout>
   );
 }

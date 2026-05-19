@@ -77,6 +77,8 @@ export const sprintApi = {
     api.delete(`/projects/${projectId}/sprints/${sprintId}/stories/${storyId}`),
   recordBurndown: (projectId: string, sprintId: string) =>
     api.post(`/projects/${projectId}/sprints/${sprintId}/burndown`),
+  getBurndown: (projectId: string, sprintId: string) =>
+    api.get(`/projects/${projectId}/sprints/${sprintId}/burndown`),
   getVelocity: (projectId: string) =>
     api.get(`/projects/${projectId}/sprints/velocity`),
 };
@@ -92,10 +94,10 @@ export const epicApi = {
     api.put(`/projects/${projectId}/epics/${epicId}`, data),
   deleteEpic: (projectId: string, epicId: string) =>
     api.delete(`/projects/${projectId}/epics/${epicId}`),
-  createStory: (projectId: string, epicId: string, data: {
+  createStory: (projectId: string, data: {
     title: string; description?: string; storyPoints?: number;
-    priority?: string; acceptanceCriteria?: string; assigneeId?: string; sprintId?: string;
-  }) => api.post(`/projects/${projectId}/epics/${epicId}/stories`, data),
+    priority?: string; acceptanceCriteria?: string; assigneeId?: string; sprintId?: string; epicId?: string;
+  }) => api.post(`/projects/${projectId}/stories`, data),
   getStories: (projectId: string, params?: Record<string, string>) =>
     api.get(`/projects/${projectId}/stories`, { params }),
   getStory: (projectId: string, storyId: string) =>
@@ -153,9 +155,9 @@ export const notificationApi = {
     api.put('/notifications/read-all'),
   deleteNotification: (notificationId: string) =>
     api.delete(`/notifications/${notificationId}`),
-  getSettings: () =>
+  getNotificationSettings: () =>
     api.get('/notifications/settings'),
-  updateSettings: (data: { emailNotificationsEnabled?: boolean; pushNotificationsEnabled?: boolean }) =>
+  updateNotificationSettings: (data: { emailNotificationsEnabled?: boolean; pushNotificationsEnabled?: boolean }) =>
     api.put('/notifications/settings', data),
 };
 

@@ -237,6 +237,66 @@ exports.createStory = [
   },
 ];
 
+exports.createStoryWithoutEpic = [
+  param('projectId').isUUID().withMessage('无效的项目ID'),
+  body('title').notEmpty().withMessage('Story标题不能为空'),
+  body('description').optional(),
+  body('storyPoints').optional().isFloat({ min: 0 }),
+  body('priority').optional().isIn(['urgent', 'high', 'medium', 'low']),
+  body('status').optional().isIn(['backlog', 'todo', 'in_progress', 'done']),
+  body('acceptanceCriteria').optional(),
+  body('assigneeId').optional().isUUID(),
+  body('sprintId').optional().isUUID(),
+  body('epicId').optional().isUUID().withMessage('无效的Epic ID'),
+  validate,
+  async (req, res, next) => {
+    try {
+      await checkProjectMember(req.params.projectId, req.user.id);
+      
+      const { title, description, storyPoints, priority, acceptanceCriteria, assigneeId, sprintId, epicId } = req.body;
+      
+      if (epicId) {
+        const epic = await Epic.findOne({
+          where: { id: epicId, projectId: req.params.projectId },
+        });
+        if (!epic) throw new AppError('Epic不存在', 404);
+      }
+      
+      const maxOrder = await Story.max('order', {
+        where: { projectId: req.params.projectId },
+      });
+      
+      const story = await Story.create({
+        title,
+        description: description || '',
+        storyPoints: storyPoints || 0,
+        priority: priority || 'medium',
+        acceptanceCriteria: acceptanceCriteria || '',
+        status: 'backlog',
+        order: (maxOrder || 0) + 1,
+        projectId: req.params.projectId,
+        epicId: epicId || null,
+        creatorId: req.user.id,
+        assigneeId: assigneeId || null,
+        sprintId: sprintId || null,
+      });
+      
+      const result = await Story.findByPk(story.id, {
+        include: [
+          { model: User, as: 'assignee', attributes: ['id', 'nickname', 'avatar'] },
+          { model: User, as: 'creator', attributes: ['id', 'nickname'] },
+          { model: Epic, as: 'epic', attributes: ['id', 'name', 'color'] },
+          { model: Sprint, as: 'sprint', attributes: ['id', 'name', 'status'] },
+        ],
+      });
+      
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+];
+
 exports.getProjectStories = [
   param('projectId').isUUID().withMessage('无效的项目ID'),
   validate,

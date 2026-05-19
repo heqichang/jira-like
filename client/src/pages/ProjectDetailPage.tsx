@@ -129,81 +129,86 @@ export default function ProjectDetailPage() {
     setShowCreateTask(true);
   };
 
-  if (!currentProject) return null;
-
   const todoTasks = tasks.filter((t) => t.status === 'todo' && !t.parentId).sort((a, b) => a.order - b.order);
   const inProgressTasks = tasks.filter((t) => t.status === 'in_progress' && !t.parentId).sort((a, b) => a.order - b.order);
   const doneTasks = tasks.filter((t) => t.status === 'done' && !t.parentId).sort((a, b) => a.order - b.order);
 
   return (
     <ProjectLayout>
-      <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-200 bg-white">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setView('board')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg ${
-                view === 'board'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              看板视图
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg ${
-                view === 'list'
-                  ? 'bg-indigo-50 text-indigo-600'
-                  : 'text-gray-500 hover:bg-gray-100'
-              }`}
-            >
-              列表视图
-            </button>
-          </div>
+      {!currentProject ? (
+        <div className="p-6 text-center">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">加载中...</p>
         </div>
-
-        {view === 'board' ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="flex-1 flex gap-4 p-6 overflow-x-auto">
-              {(['todo', 'in_progress', 'done'] as const).map((status) => {
-                const columnTasks = status === 'todo' ? todoTasks : status === 'in_progress' ? inProgressTasks : doneTasks;
-                const config = STATUS_CONFIG[status];
-                return (
-                  <DroppableColumn
-                    key={status}
-                    id={status}
-                    label={config.label}
-                    headerColor={config.headerColor}
-                    bgColor={config.color}
-                    tasks={columnTasks}
-                    onAddTask={() => openCreateTask(status)}
-                    onTaskClick={handleTaskClick}
-                  />
-                );
-              })}
+      ) : (
+        <div className="flex-1 flex flex-col">
+          <div className="p-4 border-b border-gray-200 bg-white">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setView('board')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                  view === 'board'
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                看板视图
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                  view === 'list'
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                列表视图
+              </button>
             </div>
-            <DragOverlay
-              dropAnimation={{
-                duration: 200,
-                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-              }}
-              style={{ zIndex: 1000 }}
-            >
-              {activeTask && <TaskCard task={activeTask} isDragOverlay />}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <ListView projectId={projectId!} onTaskClick={handleTaskClick} openCreateTask={openCreateTask} />
-        )}
-      </div>
+          </div>
 
-      {showDetail && currentTask && projectId && (
+          {view === 'board' ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="flex-1 flex gap-4 p-6 overflow-x-auto">
+                {(['todo', 'in_progress', 'done'] as const).map((status) => {
+                  const columnTasks = status === 'todo' ? todoTasks : status === 'in_progress' ? inProgressTasks : doneTasks;
+                  const config = STATUS_CONFIG[status];
+                  return (
+                    <DroppableColumn
+                      key={status}
+                      id={status}
+                      label={config.label}
+                      headerColor={config.headerColor}
+                      bgColor={config.color}
+                      tasks={columnTasks}
+                      onAddTask={() => openCreateTask(status)}
+                      onTaskClick={handleTaskClick}
+                    />
+                  );
+                })}
+              </div>
+              <DragOverlay
+                dropAnimation={{
+                  duration: 200,
+                  easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+                }}
+                style={{ zIndex: 1000 }}
+              >
+                {activeTask && <TaskCard task={activeTask} isDragOverlay />}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <ListView projectId={projectId!} onTaskClick={handleTaskClick} openCreateTask={openCreateTask} />
+          )}
+        </div>
+      )}
+
+      {currentProject && showDetail && currentTask && projectId && (
         <TaskDetailModal
           projectId={projectId}
           onClose={() => {
@@ -214,7 +219,7 @@ export default function ProjectDetailPage() {
         />
       )}
 
-      {showCreateTask && projectId && (
+      {currentProject && showCreateTask && projectId && (
         <CreateTaskModal
           projectId={projectId}
           defaultStatus={defaultStatus}
