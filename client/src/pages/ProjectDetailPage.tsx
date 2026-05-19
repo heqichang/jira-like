@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAppStore } from '../store';
 import {
   DndContext,
@@ -12,18 +12,12 @@ import {
 } from '@dnd-kit/core';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import {
-  Plus,
-  LayoutGrid,
-  List,
-  Settings,
-  ChevronLeft,
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
 import TaskCard from '../components/TaskCard';
 import TaskDetailModal from '../components/TaskDetailModal';
 import CreateTaskModal from '../components/CreateTaskModal';
 import ListView from '../components/ListView';
-import ProjectSettingsPage from './ProjectSettingsPage';
+import ProjectLayout from '../components/ProjectLayout';
 
 const STATUS_CONFIG = {
   todo: { label: '待办', color: 'bg-slate-100', headerColor: 'text-slate-600' },
@@ -44,7 +38,7 @@ export default function ProjectDetailPage() {
     currentTask,
   } = useAppStore();
 
-  const [view, setView] = useState<'board' | 'list' | 'settings'>('board');
+  const [view, setView] = useState<'board' | 'list'>('board');
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [activeTask, setActiveTask] = useState<typeof tasks[0] | null>(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -137,61 +131,77 @@ export default function ProjectDetailPage() {
 
   if (!currentProject) return null;
 
-  if (view === 'settings') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <ProjectHeader currentProject={currentProject} view={view} setView={setView} />
-        <ProjectSettingsPage />
-      </div>
-    );
-  }
-
   const todoTasks = tasks.filter((t) => t.status === 'todo' && !t.parentId).sort((a, b) => a.order - b.order);
   const inProgressTasks = tasks.filter((t) => t.status === 'in_progress' && !t.parentId).sort((a, b) => a.order - b.order);
   const doneTasks = tasks.filter((t) => t.status === 'done' && !t.parentId).sort((a, b) => a.order - b.order);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <ProjectHeader currentProject={currentProject} view={view} setView={setView} />
-
-      {view === 'board' ? (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex-1 flex gap-4 p-6 overflow-x-auto">
-            {(['todo', 'in_progress', 'done'] as const).map((status) => {
-              const columnTasks = status === 'todo' ? todoTasks : status === 'in_progress' ? inProgressTasks : doneTasks;
-              const config = STATUS_CONFIG[status];
-              return (
-                <DroppableColumn
-                  key={status}
-                  id={status}
-                  label={config.label}
-                  headerColor={config.headerColor}
-                  bgColor={config.color}
-                  tasks={columnTasks}
-                  onAddTask={() => openCreateTask(status)}
-                  onTaskClick={handleTaskClick}
-                />
-              );
-            })}
+    <ProjectLayout>
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 border-b border-gray-200 bg-white">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setView('board')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                view === 'board'
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              看板视图
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                view === 'list'
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              列表视图
+            </button>
           </div>
-          <DragOverlay
-            dropAnimation={{
-              duration: 200,
-              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-            }}
-            style={{ zIndex: 1000 }}
+        </div>
+
+        {view === 'board' ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
           >
-            {activeTask && <TaskCard task={activeTask} isDragOverlay />}
-          </DragOverlay>
-        </DndContext>
-      ) : (
-        <ListView projectId={projectId!} onTaskClick={handleTaskClick} openCreateTask={openCreateTask} />
-      )}
+            <div className="flex-1 flex gap-4 p-6 overflow-x-auto">
+              {(['todo', 'in_progress', 'done'] as const).map((status) => {
+                const columnTasks = status === 'todo' ? todoTasks : status === 'in_progress' ? inProgressTasks : doneTasks;
+                const config = STATUS_CONFIG[status];
+                return (
+                  <DroppableColumn
+                    key={status}
+                    id={status}
+                    label={config.label}
+                    headerColor={config.headerColor}
+                    bgColor={config.color}
+                    tasks={columnTasks}
+                    onAddTask={() => openCreateTask(status)}
+                    onTaskClick={handleTaskClick}
+                  />
+                );
+              })}
+            </div>
+            <DragOverlay
+              dropAnimation={{
+                duration: 200,
+                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+              }}
+              style={{ zIndex: 1000 }}
+            >
+              {activeTask && <TaskCard task={activeTask} isDragOverlay />}
+            </DragOverlay>
+          </DndContext>
+        ) : (
+          <ListView projectId={projectId!} onTaskClick={handleTaskClick} openCreateTask={openCreateTask} />
+        )}
+      </div>
 
       {showDetail && currentTask && projectId && (
         <TaskDetailModal
@@ -212,66 +222,7 @@ export default function ProjectDetailPage() {
           onClose={() => setShowCreateTask(false)}
         />
       )}
-    </div>
-  );
-}
-
-function ProjectHeader({
-  currentProject,
-  view,
-  setView,
-}: {
-  currentProject: NonNullable<ReturnType<typeof useAppStore.getState>['currentProject']>;
-  view: string;
-  setView: (v: 'board' | 'list' | 'settings') => void;
-}) {
-  const navigate = useNavigate();
-  return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/')} className="p-1 hover:bg-gray-100 rounded">
-            <ChevronLeft size={20} className="text-gray-500" />
-          </button>
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
-            style={{ backgroundColor: currentProject.color }}
-          >
-            {currentProject.name[0]}
-          </div>
-          <h1 className="font-semibold text-gray-900">{currentProject.name}</h1>
-        </div>
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setView('board')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              view === 'board' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <LayoutGrid size={14} />
-            看板
-          </button>
-          <button
-            onClick={() => setView('list')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              view === 'list' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <List size={14} />
-            列表
-          </button>
-          <button
-            onClick={() => setView('settings')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              view === 'settings' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <Settings size={14} />
-            设置
-          </button>
-        </div>
-      </div>
-    </header>
+    </ProjectLayout>
   );
 }
 

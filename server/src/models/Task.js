@@ -35,6 +35,24 @@ const Task = sequelize.define('Task', {
     allowNull: false,
     defaultValue: 0,
   },
+  estimatedHours: {
+    type: Sequelize.FLOAT,
+    allowNull: true,
+    defaultValue: 0,
+  },
+  startDate: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
+  dueDate: {
+    type: Sequelize.DATE,
+    allowNull: true,
+  },
+  isMilestone: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 });
 
 module.exports = Task;
